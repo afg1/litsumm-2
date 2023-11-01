@@ -11,23 +11,15 @@ class MethodKeywords:
 
 
 @lmql.query(model=model, decoder="sample", n=1, temperature=0.3, max_len=4096)
-async def select_ontology_term(keywords):
+async def select_ontology_term(terms: List[str]):
     '''lmql
-    """
-    Q: What is the best ontology term for {keywords.strip}?
+    
+    "Q: Among {terms}, which are the best ontology terms? Choose only one per keyword, and give only the ontology ID with no other characters."
 
-    Action: Query the ontology lookup service to find candidate terms for {keywords}
-    """
-    term_ids, descriptions = await search_ols(keywords, k=3)
-    """
-    Action: Select the best term from the list of candidates
-    """
-    for termid, desc in zip(term_ids, descriptions):
-        "{termid}: {desc}\n"
-    """
-    Answer: The best ontology term for {keywords} is [TERM_ID] where TERM_ID in set(term_ids)
-    """
-    return TERM_ID
+    "A: Let's think step by step. \n [REASONING]\n"
+    
+    "The comma separated list of the best terms is therefore: [TERM_ID]"
+    return TERM_ID.strip()
     '''
 
 @lmql.query(model=model, decoder="sample", n=1, temperature=0.3, max_len=4096)
@@ -45,14 +37,31 @@ def evaluate_method(pmcid):
     Keywords: 
     """
     for i in range(4):
-        "[KEYWORD]\n" where STOPS_AT(KEYWORD, '\n')
+        "[KEYWORD]\n" where STOPS_AT(KEYWORD, '\n') and len(KEYWORD) > 2
         keywords.append(KEYWORD)
+    keywords = [k.strip() for k in keywords]
 
     """
+    {keywords}
     Action: Select the best ontology term for the keywords
-    [BEST_TERMS: select_ontology_term(keywords)]
+
+    Action: Query the ontology lookup service to find candidate terms for {keywords}
     """
-    
+    term_ids, descriptions = await search_ols(keywords, k=3)
+    flat_termids = [item for sublist in term_ids for item in sublist]
+    if isinstance(term_ids[0], list):
+        for termid_q, desc_q, keyword_q in zip(term_ids, descriptions, keywords):
+            "{keyword_q}:\n"
+            for termid, desc in zip(termid_q, desc_q):
+                "{termid}: {desc}\n"
+    else:
+        for termid, desc in zip(term_ids, descriptions):
+            "{termid}: {desc}\n"
+
+    """
+    Q: Which are the best ontology terms for this method?
+    [TERM_IDS: select_ontology_term(terms=[flat_termids])]
+    """
     '''
 
 
