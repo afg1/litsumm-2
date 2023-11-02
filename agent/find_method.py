@@ -3,26 +3,29 @@ from dataclasses import dataclass
 from typing import List
 from agent.agent_tools import get_method, search_ols
 
-model = lmql.model("local:llama.cpp:/Users/agreen/LLMs/sciphi-mistral-7b-32k.Q4_K_M.gguf", n_ctx=4096, n_gpu_layers=1, tokenizer='mistralai/Mistral-7B-v0.1')
-
 @dataclass
-class MethodKeywords:
-    tasks: List[str] 
+class Result:
+    terms: List[str]
 
+model = lmql.model("local:llama.cpp:/Users/agreen/LLMs/sciphi-mistral-7b-32k.Q4_K_M.gguf", n_ctx=16384, n_gpu_layers=1, tokenizer='mistralai/Mistral-7B-v0.1')
 
-@lmql.query(model=model, decoder="sample", n=1, temperature=0.3, max_len=4096)
+@lmql.query(model=model, decoder="sample", n=1, temperature=0.1, max_len=16384)
 async def select_ontology_term(terms: List[str]):
     '''lmql
     
-    "Q: Among {terms}, which are the best ontology terms? Choose only one per keyword, and give only the ontology ID with no other characters."
-
-    "A: Let's think step by step. \n [REASONING]\n"
+    """Q: Among {terms}, which are the best ontology terms? \n
+    Choose only one per keyword, and give only the ontology ID with no other characters.
+    A: Let's think step by step.
+    [REASONING]
     
-    "The comma separated list of the best terms is therefore: [TERM_ID]"
-    return TERM_ID.strip()
-    '''
+    Return the terms as a comma separated list with no [[]]:
+    [TERM_ID]
 
-@lmql.query(model=model, decoder="sample", n=1, temperature=0.3, max_len=4096)
+    """ where STOPS_AT(TERM_ID, "\n")
+    return TERM_ID.strip().split(',')
+    '''
+#and type(TERM_ID) is Result STOPS_AT(TERM_ID, "}") and
+@lmql.query(model=model, decoder="sample", n=1, temperature=0.1, max_len=16384)
 def evaluate_method(pmcid):
     '''lmql
     """
@@ -33,7 +36,7 @@ def evaluate_method(pmcid):
     keywords = []
     """
     {pmcid} method section: {method}\n
-    Action: Select three keywords/phrases from the method that adequately describe the techniques and assays used in it
+    Action: Select three keywords/phrases from the method that describe the most important techniques and assays used 
     Keywords: 
     """
     for i in range(4):
@@ -60,8 +63,9 @@ def evaluate_method(pmcid):
 
     """
     Q: Which are the best ontology terms for this method?
-    [TERM_IDS: select_ontology_term(terms=[flat_termids])]
+    [TERM_IDS: select_ontology_term(terms=flat_termids)] 
     """
+    return TERM_IDS
     '''
 
 
@@ -77,6 +81,7 @@ def evaluate_method(pmcid):
 
 if __name__ == "__main__":
     import asyncio
-    kw = evaluate_method("PMC9360041", output_writer=lmql.printing)
-    print(kw)
+    # kw = evaluate_method("PMC9360041", output_writer=lmql.printing)
+    terms = evaluate_method("PMC4818771", output_writer=lmql.printing)
+    print(terms)
     # asyncio.run(select_ontology_term("1. Transfection\n", output_writer=lmql.printing))
