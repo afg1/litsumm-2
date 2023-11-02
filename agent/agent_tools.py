@@ -41,9 +41,7 @@ async def search_ols(query, k=1):
             term_ids_q = []
             descriptions_q = []
             q = re.sub('\d\.','',q).strip().lower()
-            print(q)
             url = f"{OLS4_API}search?q={{{q}}}&ontology=bao"
-            print(url)
             r = requests.get(url)
             if r.ok:
                 data = r.json()['response']
@@ -58,8 +56,11 @@ async def search_ols(query, k=1):
                     description = data['docs'][i]['label'] + ": " + data['docs'][i]['description'][0]
                     term_ids_q.append(ontology_id)
                     descriptions_q.append(description)
-            term_ids.append(term_ids_q)
-            descriptions.append(descriptions_q)
+                term_ids.append(term_ids_q)
+                descriptions.append(descriptions_q)
+            else:
+                print(f"Error getting ontology terms for query {q}: {r.status_code}")
+                return ["NONE"], ["NONE"]
 
     elif isinstance(query, str):
         query = re.sub('\d\.','',query).strip().lower()
