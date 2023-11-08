@@ -1,34 +1,6 @@
-"""
-These are pure python tools that an agent can use in its reasoning.
-They need to be async to be callable in the lmql queries.
-They can return anything, but the returned values should be representable as a string somehow
-"""
+from agent.settings import OLS4_API
 import requests
-from ingestion.from_epmc import get_sections, get_text
-from agent.settings import EUROPE_PMC, OLS4_API
-from lxml import etree as ET
-import asyncio
 import re
-
-async def get_method(pmcid):
-    url = f"{EUROPE_PMC}{pmcid.strip()}/fullTextXML"
-    r = requests.get(url)
-
-    if r.ok:
-        # parse the XML
-        tree = ET.fromstring(r.content)
-
-        sections = get_sections(tree, include_abstract=False)
-
-        for key in sections.keys():
-            if key.startswith("method"):
-
-                return get_text(sections[key])
-            
-    else:
-        print(f"Error getting article {pmcid}: {r.status_code}")
-        return ""
-    
 
 async def search_ols(query, k=1):
     """
@@ -84,10 +56,3 @@ async def search_ols(query, k=1):
 
         print(f"Found {len(term_ids)} terms for {query}")
     return term_ids, descriptions
-
-
-if __name__ == "__main__":
-    query = "1. Transfection\n"
-    term_ids, descriptions = asyncio.run(search_ols(query, k=10))
-    print(descriptions)
-    print(term_ids)

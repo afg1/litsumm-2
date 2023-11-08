@@ -1,15 +1,16 @@
 import lmql
 from dataclasses import dataclass
 from typing import List
-from agent.agent_tools import get_method, search_ols
+from agent.tools.functions.epmc import get_method
+from agent.tools.functions.ols import search_ols
 
 @dataclass
 class Result:
     terms: List[str]
 
-model = lmql.model("local:llama.cpp:/Users/agreen/LLMs/sciphi-mistral-7b-32k.Q4_K_M.gguf", n_ctx=16384, n_gpu_layers=1, tokenizer='mistralai/Mistral-7B-v0.1')
 
-@lmql.query(model=model, decoder="sample", n=1, temperature=0.1, max_len=16384)
+
+@lmql.query(decoder="sample", n=1, temperature=0.1, max_len=16384)
 async def select_ontology_term(terms: List[str]):
     '''lmql
     
@@ -22,10 +23,11 @@ async def select_ontology_term(terms: List[str]):
     [TERM_ID]
 
     """ where STOPS_AT(TERM_ID, "\n")
+    
     return TERM_ID.strip().split(',')
     '''
 #and type(TERM_ID) is Result STOPS_AT(TERM_ID, "}") and
-@lmql.query(model=model, decoder="sample", n=1, temperature=0.1, max_len=16384)
+@lmql.query(decoder="sample", n=1, temperature=0.1, max_len=16384)
 def evaluate_method(pmcid):
     '''lmql
     """
@@ -68,20 +70,9 @@ def evaluate_method(pmcid):
     return TERM_IDS
     '''
 
-
-
-# best_terms = []
-#     for keyword in keywords:
-#         term_id = await select_ontology_term(keyword, output_writer=lmql.printing)
-#         best_terms.append(term_id)
-    
-#     return best_terms
-
-
-
 if __name__ == "__main__":
     import asyncio
     # kw = evaluate_method("PMC9360041", output_writer=lmql.printing)
-    terms = evaluate_method("PMC4818771", output_writer=lmql.printing)
+    terms = evaluate_method("PMC1762435", output_writer=lmql.printing)
     print(terms)
     # asyncio.run(select_ontology_term("1. Transfection\n", output_writer=lmql.printing))
