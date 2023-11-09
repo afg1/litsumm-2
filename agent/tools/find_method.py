@@ -54,6 +54,8 @@ def evaluate_method(pmcid):
     """
     term_ids, descriptions = await search_ols(keywords, k=3)
     flat_termids = [item for sublist in term_ids for item in sublist]
+    if len(flat_termids) == 0:
+        return ["NONE"]
     if isinstance(term_ids[0], list):
         for termid_q, desc_q, keyword_q in zip(term_ids, descriptions, keywords):
             "{keyword_q}:\n"
