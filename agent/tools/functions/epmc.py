@@ -40,7 +40,12 @@ def get_text(sec):
 
     return " ".join(sec_sentences) if sec_sentences else ""
 
-
+def get_title(tree):
+    """
+    Expects tree to be the root xml tree from ET.
+    """
+    title = tree.find("./front/article-meta/title-group/article-title")
+    return title.text if title is not None else ""
 
 def get_sections(tree, include_abstract=False):
     """
@@ -58,6 +63,8 @@ def get_sections(tree, include_abstract=False):
     count = 0
 
     for sec in sections:
+        if len(get_text(sec)) == 0:
+            continue
         sec_title = sec.find("title")
         try:
             if re.match(".*intro.+", sec_title.text.lower()):
@@ -98,12 +105,14 @@ def get_article(pmcid):
         # parse the XML
         tree = ET.fromstring(r.content)
 
+        title = get_title(tree)
+
         sections = get_sections(tree, include_abstract=False)
 
-        full_text = "\n".join([f"{sec_name}\n" +get_text(sec) for sec_name, sec in sections.items()])
+        full_text = "\n".join([f"{sec_name}\n" + get_text(sec) for sec_name, sec in sections.items()])
         
 
-        return full_text
+        return f"Title: {title}\n\nMain Text:\n{full_text}"
     else:
         print(f"Error getting article {pmcid}: {r.status_code}")
         return ""
@@ -128,3 +137,11 @@ async def get_method(pmcid):
     else:
         print(f"Error getting article {pmcid}: {r.status_code}")
         return ""
+    
+
+if __name__ == "__main__":
+    pmcid = "PMC3467063"
+    url = f"{EUROPE_PMC}{pmcid.strip()}/fullTextXML"
+    r = requests.get(url)
+    tree = ET.fromstring(r.content)
+    print(get_title(tree))
